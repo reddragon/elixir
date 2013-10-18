@@ -1,59 +1,39 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"io"
+	"io/ioutil"
 	"math/rand"
 	"net/http"
-	"os"
+	"bytes"
 	"time"
+	"log"
+	"flag"
+	"strconv"
 )
 
 var quotes []string
 var visits int
 
 func readQuotes(file string) {
-	f, err := os.Open(file)
-	if err != nil {
-		panic(err)
-	}
-	defer f.Close()
-
-	quotes = make([]string, 0)
-
-	r := bufio.NewReader(f)
-	for {
-		q, err := r.ReadString('\n')
-		if err == io.EOF {
-			break
-		} else if err != nil {
-			panic(err)
-		}
-		quotes = append(quotes, q)
-	}
+     b, err := ioutil.ReadFile(file)
+     if err != nil {
+     	panic(err)
+     }
+     qParts := bytes.Split(b, []byte("\n"))
+     for _, line := range qParts {
+     	 quotes = append(quotes, string(line))
+     }
 }
 
 var index []byte
 
 func readIndex(file string) {
-	f, err := os.Open(file)
-	if err != nil {
-		panic(err)
-	}
-	defer f.Close()
-
-	index = make([]byte, 1024)
-
-	for {
-		n, err := f.Read(index)
-		if err != nil && err != io.EOF {
-			panic(err)
-		}
-		if n == 0 {
-			break
-		}
-	}
+     b, err := ioutil.ReadFile(file)
+     if err != nil {
+     	panic(err)
+     }
+     index = b
 }
 
 func root(w http.ResponseWriter, r *http.Request) {
@@ -82,10 +62,19 @@ func getRandQuote() string {
 func main() {
 	visits = 0
 	rand.Seed(time.Now().UTC().UnixNano())
+
+	listenPort := flag.Int("port", 80,
+		"The HTTP port to listen on (default: 80)")
+
+	flag.Parse()
+
 	readQuotes("quotes.txt")
 	readIndex("index.html")
 	http.HandleFunc("/", root)
 	http.HandleFunc("/quote", quoteHandler)
 	http.HandleFunc("/visits", visitsHandler)
-	http.ListenAndServe(":80", nil)
+	err := http.ListenAndServe(":" + strconv.Itoa(*listenPort), nil)
+	if err != nil {
+           log.Fatal("ListenAndServe: ", err)
+ 	}
 }
