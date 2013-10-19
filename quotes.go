@@ -23,7 +23,9 @@ func readQuotes(file string) {
 	}
 	qParts := bytes.Split(b, []byte("\n"))
 	for _, line := range qParts {
-		quotes = append(quotes, string(line))
+	    if len(line) > 0 {
+	        quotes = append(quotes, string(line))
+	    }
 	}
 }
 
