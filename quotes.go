@@ -10,6 +10,7 @@ import (
 	"log"
 	"flag"
 	"strconv"
+	"github.com/dhruvbird/cowsay.go"
 )
 
 var quotes []string
@@ -42,7 +43,22 @@ func root(w http.ResponseWriter, r *http.Request) {
 }
 
 func quoteHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "%s\n", getRandQuote())
+        r.ParseForm()
+	// fmt.Printf("%s\n", r.Form)
+	quoteStr := getRandQuote()
+	qFormats, ok := r.Form["format"]
+	if !ok || len(qFormats) == 0 {
+	   qFormats = append(qFormats, "text")
+	}
+	qFormat := qFormats[0]
+	switch qFormat {
+	    case "cowsay":
+	        quoteStr = cowsay.Format(quoteStr)
+  	    default:
+		quoteStr = fmt.Sprintf("\"%s\"", quoteStr)
+	}
+
+	fmt.Fprintf(w, "%s\n", quoteStr)
 	logVisit(r)
 }
 
