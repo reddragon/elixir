@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	"github.com/dhruvbird/cowsay.go"
+	"github.com/dhruvbird/go-cowsay"
 	"io/ioutil"
 	"log"
 	"math/rand"
