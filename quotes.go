@@ -4,13 +4,13 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
+	"github.com/dhruvbird/cowsay.go"
 	"io/ioutil"
 	"log"
 	"math/rand"
 	"net/http"
 	"strconv"
 	"time"
-	"github.com/dhruvbird/cowsay.go"
 )
 
 var quotes []string
@@ -23,9 +23,9 @@ func readQuotes(file string) {
 	}
 	qParts := bytes.Split(b, []byte("\n"))
 	for _, line := range qParts {
-	    if len(line) > 0 {
-	        quotes = append(quotes, string(line))
-	    }
+		if len(line) > 0 {
+			quotes = append(quotes, string(line))
+		}
 	}
 }
 
@@ -45,18 +45,18 @@ func root(w http.ResponseWriter, r *http.Request) {
 }
 
 func quoteHandler(w http.ResponseWriter, r *http.Request) {
-        r.ParseForm()
+	r.ParseForm()
 	// fmt.Printf("%s\n", r.Form)
 	quoteStr := getRandQuote()
 	qFormats, ok := r.Form["format"]
 	if !ok || len(qFormats) == 0 {
-	   qFormats = append(qFormats, "text")
+		qFormats = append(qFormats, "text")
 	}
 	qFormat := qFormats[0]
 	switch qFormat {
-	    case "cowsay":
-	        quoteStr = cowsay.Format(quoteStr)
-  	    default:
+	case "cowsay":
+		quoteStr = cowsay.Format(quoteStr)
+	default:
 		quoteStr = fmt.Sprintf("\"%s\"", quoteStr)
 	}
 
