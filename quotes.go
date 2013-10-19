@@ -46,7 +46,6 @@ func root(w http.ResponseWriter, r *http.Request) {
 
 func quoteHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
-	// fmt.Printf("%s\n", r.Form)
 	quoteStr := getRandQuote()
 	qFormats, ok := r.Form["format"]
 	if !ok || len(qFormats) == 0 {
