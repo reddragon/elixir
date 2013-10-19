@@ -1,15 +1,15 @@
 package main
 
 import (
+	"bytes"
+	"flag"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"math/rand"
 	"net/http"
-	"bytes"
-	"time"
-	"log"
-	"flag"
 	"strconv"
+	"time"
 	"github.com/dhruvbird/cowsay.go"
 )
 
@@ -17,24 +17,24 @@ var quotes []string
 var visits int
 
 func readQuotes(file string) {
-     b, err := ioutil.ReadFile(file)
-     if err != nil {
-     	panic(err)
-     }
-     qParts := bytes.Split(b, []byte("\n"))
-     for _, line := range qParts {
-     	 quotes = append(quotes, string(line))
-     }
+	b, err := ioutil.ReadFile(file)
+	if err != nil {
+		panic(err)
+	}
+	qParts := bytes.Split(b, []byte("\n"))
+	for _, line := range qParts {
+		quotes = append(quotes, string(line))
+	}
 }
 
 var index []byte
 
 func readIndex(file string) {
-     b, err := ioutil.ReadFile(file)
-     if err != nil {
-     	panic(err)
-     }
-     index = b
+	b, err := ioutil.ReadFile(file)
+	if err != nil {
+		panic(err)
+	}
+	index = b
 }
 
 func root(w http.ResponseWriter, r *http.Request) {
@@ -89,8 +89,8 @@ func main() {
 	http.HandleFunc("/", root)
 	http.HandleFunc("/quote", quoteHandler)
 	http.HandleFunc("/visits", visitsHandler)
-	err := http.ListenAndServe(":" + strconv.Itoa(*listenPort), nil)
+	err := http.ListenAndServe(":"+strconv.Itoa(*listenPort), nil)
 	if err != nil {
-           log.Fatal("ListenAndServe: ", err)
- 	}
+		log.Fatal("ListenAndServe: ", err)
+	}
 }
