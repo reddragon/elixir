@@ -63,9 +63,10 @@ func quoteHandler(w http.ResponseWriter, r *http.Request) {
 	logVisit(r)
 }
 
+const layout = "02/01/2006 15:04:05"
 func logVisit(r *http.Request) {
 	visits = visits + 1
-	fmt.Printf("Visit by: %s\n", r.RemoteAddr)
+	fmt.Printf("%s %s\n", time.Now().Format(layout), r.RemoteAddr)
 }
 
 func visitsHandler(w http.ResponseWriter, r *http.Request) {
