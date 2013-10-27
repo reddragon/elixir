@@ -12,42 +12,67 @@ import (
 	"os"
 	"strconv"
 	"time"
+	"strings"
 )
 
 var quotes []string
 var visits int
 
-func readQuotes(file string) {
+func readQuotes(file string) ([]string){
 	b, err := ioutil.ReadFile(file)
 	if err != nil {
 		panic(err)
 	}
 	qParts := bytes.Split(b, []byte("\n"))
+	quotesList := make([]string, 0)
 	for _, line := range qParts {
 		if len(line) > 0 {
-			quotes = append(quotes, string(line))
+			quotesList = append(quotesList, string(line))
 		}
 	}
+	return quotesList
 }
 
-var index []byte
+var index string
 
 func readIndex(file string) {
 	b, err := ioutil.ReadFile(file)
 	if err != nil {
 		panic(err)
 	}
-	index = b
+	index = string(b)
 }
 
-func root(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "%s", index)
+func handler(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	quoteEndpoint := strings.Split(r.RequestURI[1:], "?")[0]
+	if quoteEndpoint == "" {
+		fmt.Fprintf(w, "%s\n", index)
+	} else {
+		serveRandQuote(quoteEndpoint, w, r)
+	}
 	logVisit(r)
 }
 
-func quoteHandler(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
-	quoteStr := getRandQuote()
+const layout = "02/01/2006 15:04:05"
+func logVisit(r *http.Request) {
+	visits = visits + 1
+	fmt.Printf("%s %s\n", time.Now().Format(layout), r.RemoteAddr)
+}
+
+func visitsHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "Number of visits: %d\n", visits)
+}
+
+func serveRandQuote(quoteEndpoint string, w http.ResponseWriter, r *http.Request) {
+	quoteStr := ""
+	if quoteMap[quoteEndpoint] == nil {
+		http.NotFound(w, r)
+		return
+	} else {
+		quoteStr = quoteMap[quoteEndpoint][rand.Intn(len(quoteMap[quoteEndpoint]))]
+	}
+
 	qFormats, ok := r.Form["format"]
 	if !ok || len(qFormats) == 0 {
 		qFormats = append(qFormats, "text")
@@ -59,51 +84,54 @@ func quoteHandler(w http.ResponseWriter, r *http.Request) {
 	default:
 		quoteStr = fmt.Sprintf("\"%s\"", quoteStr)
 	}
-
 	fmt.Fprintf(w, "%s\n", quoteStr)
-	logVisit(r)
 }
 
-const layout = "02/01/2006 15:04:05"
-
-func logVisit(r *http.Request) {
-	visits = visits + 1
-	fmt.Printf("%s %s\n", time.Now().Format(layout), r.RemoteAddr)
-}
-
-func visitsHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Number of visits: %d\n", visits)
-}
-
-func getRandQuote() string {
-	return quotes[rand.Intn(len(quotes))]
-}
-
-// The idea is to be able to reload the quotes file without having to shutdown
-// the server. I'm using the mtime in the file stats, to figure out if a change
-// has happened since we last loaded it. This could have been done better with
-// inotify(2) system call, but alas it is not supported on Darwin
+// Periodically polling to check the mtime.
+// Sad that inotify isn't present on Darwin.
 func fileChangeListener() {
-	fi, err := os.Lstat("quotes.txt")
-	if err != nil {
-		panic(err)
+	mtimeMap := make(map[string]time.Time)
+	for _, fileName := range fileList {
+		fi, err := os.Lstat(fileName)
+		if err != nil {
+			panic(err)
+		}
+		mtimeMap[fileName] = fi.ModTime()
 	}
-	mTime := fi.ModTime()
 
 	for {
 		time.Sleep(1 * time.Second)
-		fi, err := os.Lstat("quotes.txt")
-		if err != nil {
-			// TODO
-			// Log a warning that something went wrong.
-			continue
+		for _, fileName := range fileList {
+			fi, err := os.Lstat(fileName)
+			if err != nil {
+				// TODO
+				// Log a warning that something went wrong.
+				continue
+			}
+			if fi.ModTime().After(mtimeMap[fileName]) {
+				fmt.Println("Reloading quotes from", fileName)
+				quoteEndpoint := fileName[:len(fileName) - len(".quotes")]
+				quoteMap[quoteEndpoint] = readQuotes(fileName)
+				mtimeMap[fileName] = fi.ModTime()
+			}
 		}
-		newMTime := fi.ModTime()
-		if newMTime.After(mTime) {
-			fmt.Println("Reloading the quotes")
-			quotes = quotes[len(quotes):]
-			readQuotes("quotes.txt")
-			mTime = newMTime
+	}
+}
+
+var fileList []string
+var quoteMap map[string][]string
+func loadQuotes() {
+	tmpFiles, err := ioutil.ReadDir(".")
+	if err != nil {
+		panic(err)
+	}
+	quoteMap = make(map[string][]string)
+	for _, file := range tmpFiles {
+		if fileName := file.Name(); strings.HasSuffix(fileName, ".quotes") {
+			quoteEndpoint := fileName[:len(fileName) - len(".quotes")]
+			fileList = append(fileList, fileName)
+			quoteMap[quoteEndpoint] = readQuotes(fileName)
+			fmt.Println("Loaded quotes from", fileName)
 		}
 	}
 }
@@ -117,11 +145,10 @@ func main() {
 
 	flag.Parse()
 
-	readQuotes("quotes.txt")
 	readIndex("index.html")
-	http.HandleFunc("/", root)
-	http.HandleFunc("/quote", quoteHandler)
+	http.HandleFunc("/", handler)
 	http.HandleFunc("/visits", visitsHandler)
+	loadQuotes()
 	go fileChangeListener()
 	err := http.ListenAndServe(":"+strconv.Itoa(*listenPort), nil)
 	if err != nil {
