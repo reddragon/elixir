@@ -91,22 +91,24 @@ func serveRandQuote(quoteEndpoint string, w http.ResponseWriter, r *http.Request
 // Periodically polling to check the mtime.
 // Sad that inotify isn't present on Darwin.
 func fileChangeListener() {
-	mtimeMap := make(map[string]time.Time)
-	for _, fileName := range fileList {
-		fi, err := os.Lstat(fileName)
-		if err != nil {
-			panic(err)
-		}
-		mtimeMap[fileName] = fi.ModTime()
-	}
-
 	for {
-		time.Sleep(1 * time.Second)
-		for _, fileName := range fileList {
+		for _, fileName := range getQuotesFiles() {
+			if !fileSet[fileName] {
+				fmt.Println("Found a new quotes file", fileName)
+				quoteEndpoint := getEndpoint(fileName)
+				quoteMap[quoteEndpoint] = readQuotes(fileName)
+				mtimeMap[fileName] = getMTime(fileName)
+				fmt.Println("Loaded quotes from", fileName)
+				fileSet[fileName] = true
+			}
+		}
+
+		for fileName, _ := range fileSet {
 			fi, err := os.Lstat(fileName)
 			if err != nil {
-				// TODO
-				// Log a warning that something went wrong.
+				fmt.Println("Removing", fileName, "from the list, since it is no longer available.")
+				delete(fileSet, fileName)
+				delete(quoteMap, getEndpoint(fileName))
 				continue
 			}
 			if fi.ModTime().After(mtimeMap[fileName]) {
@@ -116,25 +118,51 @@ func fileChangeListener() {
 				mtimeMap[fileName] = fi.ModTime()
 			}
 		}
+		time.Sleep(1 * time.Second)
 	}
 }
 
-var fileList []string
+var fileSet map[string]bool
 var quoteMap map[string][]string
 
-func loadQuotes() {
-	tmpFiles, err := ioutil.ReadDir(".")
+func getEndpoint(fileName string) string {
+	return fileName[:len(fileName)-len(".quotes")]
+}
+
+func getQuotesFiles() []string {
+	files, err := ioutil.ReadDir(".")
 	if err != nil {
 		panic(err)
 	}
-	quoteMap = make(map[string][]string)
-	for _, file := range tmpFiles {
+	quoteFiles := make([]string, 0)
+	for _, file := range files {
 		if fileName := file.Name(); strings.HasSuffix(fileName, ".quotes") {
-			quoteEndpoint := fileName[:len(fileName)-len(".quotes")]
-			fileList = append(fileList, fileName)
-			quoteMap[quoteEndpoint] = readQuotes(fileName)
-			fmt.Println("Loaded quotes from", fileName)
+			quoteFiles = append(quoteFiles, fileName)
 		}
+	}
+	return quoteFiles
+}
+
+func getMTime(fileName string) time.Time {
+	fi, err := os.Lstat(fileName)
+	if err != nil {
+		panic(err)
+	}
+	return fi.ModTime()
+}
+
+var mtimeMap map[string]time.Time
+
+func loadQuotes() {
+	fileSet = make(map[string]bool)
+	quoteMap = make(map[string][]string)
+	mtimeMap = make(map[string]time.Time)
+	for _, fileName := range getQuotesFiles() {
+		quoteEndpoint := getEndpoint(fileName)
+		quoteMap[quoteEndpoint] = readQuotes(fileName)
+		mtimeMap[fileName] = getMTime(fileName)
+		fmt.Println("Loaded quotes from", fileName)
+		fileSet[fileName] = true
 	}
 }
 
