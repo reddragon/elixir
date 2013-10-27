@@ -11,14 +11,14 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"time"
 	"strings"
+	"time"
 )
 
 var quotes []string
 var visits int
 
-func readQuotes(file string) ([]string){
+func readQuotes(file string) []string {
 	b, err := ioutil.ReadFile(file)
 	if err != nil {
 		panic(err)
@@ -55,6 +55,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 }
 
 const layout = "02/01/2006 15:04:05"
+
 func logVisit(r *http.Request) {
 	visits = visits + 1
 	fmt.Printf("%s %s\n", time.Now().Format(layout), r.RemoteAddr)
@@ -110,7 +111,7 @@ func fileChangeListener() {
 			}
 			if fi.ModTime().After(mtimeMap[fileName]) {
 				fmt.Println("Reloading quotes from", fileName)
-				quoteEndpoint := fileName[:len(fileName) - len(".quotes")]
+				quoteEndpoint := fileName[:len(fileName)-len(".quotes")]
 				quoteMap[quoteEndpoint] = readQuotes(fileName)
 				mtimeMap[fileName] = fi.ModTime()
 			}
@@ -120,6 +121,7 @@ func fileChangeListener() {
 
 var fileList []string
 var quoteMap map[string][]string
+
 func loadQuotes() {
 	tmpFiles, err := ioutil.ReadDir(".")
 	if err != nil {
@@ -128,7 +130,7 @@ func loadQuotes() {
 	quoteMap = make(map[string][]string)
 	for _, file := range tmpFiles {
 		if fileName := file.Name(); strings.HasSuffix(fileName, ".quotes") {
-			quoteEndpoint := fileName[:len(fileName) - len(".quotes")]
+			quoteEndpoint := fileName[:len(fileName)-len(".quotes")]
 			fileList = append(fileList, fileName)
 			quoteMap[quoteEndpoint] = readQuotes(fileName)
 			fmt.Println("Loaded quotes from", fileName)
