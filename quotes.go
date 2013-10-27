@@ -92,7 +92,7 @@ func serveRandQuote(quoteEndpoint string, w http.ResponseWriter, r *http.Request
 // Sad that inotify isn't present on Darwin.
 func fileChangeListener() {
 	mtimeMap := make(map[string]time.Time)
-	for _, fileName := range fileList {
+	for fileName, _ := range fileSet {
 		fi, err := os.Lstat(fileName)
 		if err != nil {
 			panic(err)
@@ -102,11 +102,12 @@ func fileChangeListener() {
 
 	for {
 		time.Sleep(1 * time.Second)
-		for _, fileName := range fileList {
+		for fileName, _ := range fileSet {
 			fi, err := os.Lstat(fileName)
 			if err != nil {
-				// TODO
-				// Log a warning that something went wrong.
+				fmt.Println("Removing", fileName, "from the list, since it is no longer available.")
+				delete(fileSet, fileName)
+				delete(quoteMap, getEndpoint(fileName))
 				continue
 			}
 			if fi.ModTime().After(mtimeMap[fileName]) {
@@ -119,19 +120,24 @@ func fileChangeListener() {
 	}
 }
 
-var fileList []string
+var fileSet map[string]bool
 var quoteMap map[string][]string
+
+func getEndpoint(fileName string) string {
+	return fileName[:len(fileName)-len(".quotes")]
+}
 
 func loadQuotes() {
 	tmpFiles, err := ioutil.ReadDir(".")
 	if err != nil {
 		panic(err)
 	}
+	fileSet = make(map[string]bool)
 	quoteMap = make(map[string][]string)
 	for _, file := range tmpFiles {
 		if fileName := file.Name(); strings.HasSuffix(fileName, ".quotes") {
-			quoteEndpoint := fileName[:len(fileName)-len(".quotes")]
-			fileList = append(fileList, fileName)
+			quoteEndpoint := getEndpoint(fileName)
+			fileSet[fileName] = true
 			quoteMap[quoteEndpoint] = readQuotes(fileName)
 			fmt.Println("Loaded quotes from", fileName)
 		}
