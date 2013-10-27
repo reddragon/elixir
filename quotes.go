@@ -90,10 +90,12 @@ func serveRandQuote(quoteEndpoint string, w http.ResponseWriter, r *http.Request
 
 var mtimeMap map[string]time.Time
 
-func maintainQuotes() {
+func maintainQuotes(c chan bool) {
 	fileSet = make(map[string]bool)
 	quoteMap = make(map[string][]string)
 	mtimeMap = make(map[string]time.Time)
+
+	firstPassDone := false
 
 	for {
 		for _, fileName := range getQuotesFiles() {
@@ -105,6 +107,11 @@ func maintainQuotes() {
 				fmt.Println("Loaded quotes from", fileName)
 				fileSet[fileName] = true
 			}
+		}
+		if !firstPassDone {
+			firstPassDone = true
+			// Signal to the main thread that it is safe to serve traffic now
+			c <- true
 		}
 
 		for fileName, _ := range fileSet {
@@ -167,7 +174,17 @@ func main() {
 	readIndex("index.html")
 	http.HandleFunc("/", handler)
 	http.HandleFunc("/visits", visitsHandler)
-	go maintainQuotes()
+	c := make(chan bool)
+	fmt.Println("Starting the quotes maintenance goroutine")
+	go maintainQuotes(c)
+	fmt.Println("Waiting for the signal to serve traffic")
+	safe := <-c
+	if safe {
+		fmt.Println("It is safe to serve traffic now")
+	} else {
+		panic("Something bad happened. Dying")
+	}
+
 	err := http.ListenAndServe(":"+strconv.Itoa(*listenPort), nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
