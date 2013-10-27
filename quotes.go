@@ -9,6 +9,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 )
@@ -64,6 +65,7 @@ func quoteHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 const layout = "02/01/2006 15:04:05"
+
 func logVisit(r *http.Request) {
 	visits = visits + 1
 	fmt.Printf("%s %s\n", time.Now().Format(layout), r.RemoteAddr)
@@ -75,6 +77,35 @@ func visitsHandler(w http.ResponseWriter, r *http.Request) {
 
 func getRandQuote() string {
 	return quotes[rand.Intn(len(quotes))]
+}
+
+// The idea is to be able to reload the quotes file without having to shutdown
+// the server. I'm using the mtime in the file stats, to figure out if a change
+// has happened since we last loaded it. This could have been done better with
+// inotify(2) system call, but alas it is not supported on Darwin
+func fileChangeListener() {
+	fi, err := os.Lstat("quotes.txt")
+	if err != nil {
+		panic(err)
+	}
+	mTime := fi.ModTime()
+
+	for {
+		time.Sleep(1 * time.Second)
+		fi, err := os.Lstat("quotes.txt")
+		if err != nil {
+			// TODO
+			// Log a warning that something went wrong.
+			continue
+		}
+		newMTime := fi.ModTime()
+		if newMTime.After(mTime) {
+			fmt.Println("Reloading the quotes")
+			quotes = quotes[len(quotes):]
+			readQuotes("quotes.txt")
+			mTime = newMTime
+		}
+	}
 }
 
 func main() {
@@ -91,6 +122,7 @@ func main() {
 	http.HandleFunc("/", root)
 	http.HandleFunc("/quote", quoteHandler)
 	http.HandleFunc("/visits", visitsHandler)
+	go fileChangeListener()
 	err := http.ListenAndServe(":"+strconv.Itoa(*listenPort), nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
