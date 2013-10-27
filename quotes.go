@@ -88,9 +88,13 @@ func serveRandQuote(quoteEndpoint string, w http.ResponseWriter, r *http.Request
 	fmt.Fprintf(w, "%s\n", quoteStr)
 }
 
-// Periodically polling to check the mtime.
-// Sad that inotify isn't present on Darwin.
-func fileChangeListener() {
+var mtimeMap map[string]time.Time
+
+func maintainQuotes() {
+	fileSet = make(map[string]bool)
+	quoteMap = make(map[string][]string)
+	mtimeMap = make(map[string]time.Time)
+
 	for {
 		for _, fileName := range getQuotesFiles() {
 			if !fileSet[fileName] {
@@ -151,21 +155,6 @@ func getMTime(fileName string) time.Time {
 	return fi.ModTime()
 }
 
-var mtimeMap map[string]time.Time
-
-func loadQuotes() {
-	fileSet = make(map[string]bool)
-	quoteMap = make(map[string][]string)
-	mtimeMap = make(map[string]time.Time)
-	for _, fileName := range getQuotesFiles() {
-		quoteEndpoint := getEndpoint(fileName)
-		quoteMap[quoteEndpoint] = readQuotes(fileName)
-		mtimeMap[fileName] = getMTime(fileName)
-		fmt.Println("Loaded quotes from", fileName)
-		fileSet[fileName] = true
-	}
-}
-
 func main() {
 	visits = 0
 	rand.Seed(time.Now().UTC().UnixNano())
@@ -178,8 +167,7 @@ func main() {
 	readIndex("index.html")
 	http.HandleFunc("/", handler)
 	http.HandleFunc("/visits", visitsHandler)
-	loadQuotes()
-	go fileChangeListener()
+	go maintainQuotes()
 	err := http.ListenAndServe(":"+strconv.Itoa(*listenPort), nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
