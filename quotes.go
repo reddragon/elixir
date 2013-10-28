@@ -1,8 +1,7 @@
-package main
+package elixir
 
 import (
 	"bytes"
-	"flag"
 	"fmt"
 	"github.com/dhruvbird/go-cowsay"
 	"io/ioutil"
@@ -197,9 +196,4 @@ func start(listenPort int) {
 	}
 }
 
-func main() {
-	listenPort := flag.Int("port", 80,
-		"The HTTP port to listen on (default: 80)")
-	flag.Parse()
-	start(*listenPort)
-}
+
