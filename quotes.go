@@ -173,7 +173,7 @@ func maintainQuotes(c chan bool) {
 }
 
 // The method that starts up the server, given the port where to listen on.
-func start(listenPort int) {
+func Start(listenPort int) {
 	visits = 0
 	rand.Seed(time.Now().UTC().UnixNano())
 	readIndex("index.html")
@@ -195,5 +195,3 @@ func start(listenPort int) {
 		log.Fatal("ListenAndServe: ", err)
 	}
 }
-
-
