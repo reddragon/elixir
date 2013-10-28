@@ -15,24 +15,6 @@ import (
 	"time"
 )
 
-var quotes []string
-var visits int
-
-func readQuotes(file string) []string {
-	b, err := ioutil.ReadFile(file)
-	if err != nil {
-		panic(err)
-	}
-	qParts := bytes.Split(b, []byte("\n"))
-	quotesList := make([]string, 0)
-	for _, line := range qParts {
-		if len(line) > 0 {
-			quotesList = append(quotesList, string(line))
-		}
-	}
-	return quotesList
-}
-
 var index string
 
 func readIndex(file string) {
@@ -43,6 +25,7 @@ func readIndex(file string) {
 	index = string(b)
 }
 
+// The handler for the quotes and the index page
 func handler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	quoteEndpoint := strings.Split(r.RequestURI[1:], "?")[0]
@@ -54,17 +37,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	logVisit(r)
 }
 
-const layout = "02/01/2006 15:04:05"
-
-func logVisit(r *http.Request) {
-	visits = visits + 1
-	fmt.Printf("%s %s\n", time.Now().Format(layout), r.RemoteAddr)
-}
-
-func visitsHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Number of visits: %d\n", visits)
-}
-
+// This method will serve a random quote given the endpoint.
 func serveRandQuote(quoteEndpoint string, w http.ResponseWriter, r *http.Request) {
 	quoteStr := ""
 	if quoteMap[quoteEndpoint] == nil {
@@ -88,8 +61,75 @@ func serveRandQuote(quoteEndpoint string, w http.ResponseWriter, r *http.Request
 	fmt.Fprintf(w, "%s\n", quoteStr)
 }
 
+const layout = "02/01/2006 15:04:05"
+
+var visits int
+
+// Minimally log a user's visit
+func logVisit(r *http.Request) {
+	visits = visits + 1
+	fmt.Printf("%s %s\n", time.Now().Format(layout), r.RemoteAddr)
+}
+
+func visitsHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "Number of visits: %d\n", visits)
+}
+
+var fileSet map[string]bool
+var quoteMap map[string][]string
 var mtimeMap map[string]time.Time
 
+// Get all the .quotes files in the CWD
+func getQuotesFiles() []string {
+	files, err := ioutil.ReadDir(".")
+	if err != nil {
+		panic(err)
+	}
+	quoteFiles := make([]string, 0)
+	for _, file := range files {
+		if fileName := file.Name(); strings.HasSuffix(fileName, ".quotes") {
+			quoteFiles = append(quoteFiles, fileName)
+		}
+	}
+	return quoteFiles
+}
+
+// Helper method to convert the file name to the API endpoint
+// For instance, if the name of the quotes file is "lotr.quotes", the quote
+// server will serve quotes at "/lotr" and this method will return "lotr"
+func getEndpoint(fileName string) string {
+	return fileName[:len(fileName)-len(".quotes")]
+}
+
+// Get the time at which a file was last modified.
+func getMTime(fileName string) time.Time {
+	fi, err := os.Lstat(fileName)
+	if err != nil {
+		panic(err)
+	}
+	return fi.ModTime()
+}
+
+// Read and return the quotes from a file
+func readQuotes(file string) []string {
+	b, err := ioutil.ReadFile(file)
+	if err != nil {
+		panic(err)
+	}
+	qParts := bytes.Split(b, []byte("\n"))
+	quotesList := make([]string, 0)
+	for _, line := range qParts {
+		if len(line) > 0 {
+			quotesList = append(quotesList, string(line))
+		}
+	}
+	return quotesList
+}
+
+// This is the goroutine which will run forever, loading in the quotes from the
+// quotes files present in your CWD, deleting them when they get removed and
+// adding them when they get created, without you needing to have to restart
+// the server.
 func maintainQuotes(c chan bool) {
 	fileSet = make(map[string]bool)
 	quoteMap = make(map[string][]string)
@@ -133,44 +173,10 @@ func maintainQuotes(c chan bool) {
 	}
 }
 
-var fileSet map[string]bool
-var quoteMap map[string][]string
-
-func getEndpoint(fileName string) string {
-	return fileName[:len(fileName)-len(".quotes")]
-}
-
-func getQuotesFiles() []string {
-	files, err := ioutil.ReadDir(".")
-	if err != nil {
-		panic(err)
-	}
-	quoteFiles := make([]string, 0)
-	for _, file := range files {
-		if fileName := file.Name(); strings.HasSuffix(fileName, ".quotes") {
-			quoteFiles = append(quoteFiles, fileName)
-		}
-	}
-	return quoteFiles
-}
-
-func getMTime(fileName string) time.Time {
-	fi, err := os.Lstat(fileName)
-	if err != nil {
-		panic(err)
-	}
-	return fi.ModTime()
-}
-
-func main() {
+// The method that starts up the server, given the port where to listen on.
+func start(listenPort int) {
 	visits = 0
 	rand.Seed(time.Now().UTC().UnixNano())
-
-	listenPort := flag.Int("port", 80,
-		"The HTTP port to listen on (default: 80)")
-
-	flag.Parse()
-
 	readIndex("index.html")
 	http.HandleFunc("/", handler)
 	http.HandleFunc("/visits", visitsHandler)
@@ -185,8 +191,15 @@ func main() {
 		panic("Something bad happened. Dying")
 	}
 
-	err := http.ListenAndServe(":"+strconv.Itoa(*listenPort), nil)
+	err := http.ListenAndServe(":"+strconv.Itoa(listenPort), nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
+}
+
+func main() {
+	listenPort := flag.Int("port", 80,
+		"The HTTP port to listen on (default: 80)")
+	flag.Parse()
+	start(*listenPort)
 }
