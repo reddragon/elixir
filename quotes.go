@@ -139,7 +139,7 @@ func readQuotes(file string) []string {
 	if err != nil {
 		panic(err)
 	}
-	qParts := bytes.Split(b, []byte("\n%"))
+	qParts := bytes.Split(b, []byte("\n%\n"))
 	quotesList := make([]string, 0)
 	for _, line := range qParts {
 		if len(line) > 0 {
