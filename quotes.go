@@ -70,7 +70,7 @@ func serveRandQuote(quoteEndpoint string, w http.ResponseWriter, r *http.Request
 		quoteStr = quoteMap[quoteEndpoint][rand.Intn(len(quoteMap[quoteEndpoint]))]
 	}
 
-	qFormats, ok := r.Form["format"]
+	qFormats, ok := r.Form["f"]
 	if !ok || len(qFormats) == 0 {
 		qFormats = append(qFormats, "text")
 	}
@@ -79,7 +79,7 @@ func serveRandQuote(quoteEndpoint string, w http.ResponseWriter, r *http.Request
 	case "cowsay":
 		quoteStr = cowsay.Format(quoteStr)
 	default:
-		quoteStr = fmt.Sprintf("\"%s\"", quoteStr)
+		quoteStr = fmt.Sprintf("%s", quoteStr)
 	}
 	fmt.Fprintf(w, "%s\n", quoteStr)
 }
@@ -139,7 +139,7 @@ func readQuotes(file string) []string {
 	if err != nil {
 		panic(err)
 	}
-	qParts := bytes.Split(b, []byte("\n"))
+	qParts := bytes.Split(b, []byte("%"))
 	quotesList := make([]string, 0)
 	for _, line := range qParts {
 		if len(line) > 0 {
