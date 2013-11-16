@@ -85,7 +85,7 @@ func serveRandQuote(quoteEndpoint string, w http.ResponseWriter, r *http.Request
 	fmt.Fprintf(w, "%s\n", quoteStr)
 }
 
-const layout = "02/01/2006 15:04:05"
+const layout = "2006/01/02 15:04:05"
 
 var visits int
 
