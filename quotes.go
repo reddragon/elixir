@@ -39,13 +39,14 @@ import (
 )
 
 var index string
+var indexFile string
 
-func readIndex(file string) {
+func readFile(file string) []byte {
 	b, err := ioutil.ReadFile(file)
 	if err != nil {
 		panic(err)
 	}
-	index = string(b)
+	return b
 }
 
 // The handler for the quotes and the index page
@@ -135,10 +136,7 @@ func getMTime(fileName string) time.Time {
 
 // Read and return the quotes from a file
 func readQuotes(file string) []string {
-	b, err := ioutil.ReadFile(file)
-	if err != nil {
-		panic(err)
-	}
+	b := readFile(file)
 	qParts := bytes.Split(b, []byte("\n%\n"))
 	quotesList := make([]string, 0)
 	for _, line := range qParts {
@@ -172,6 +170,9 @@ func maintainQuotes(c chan bool) {
 			}
 		}
 		if !firstPassDone {
+			// Also load the index file
+			index = string(readFile(indexFile))
+			mtimeMap[indexFile] = getMTime(indexFile)
 			firstPassDone = true
 			// Signal to the main thread that it is safe to serve traffic now
 			c <- true
@@ -192,6 +193,15 @@ func maintainQuotes(c chan bool) {
 				mtimeMap[fileName] = fi.ModTime()
 			}
 		}
+		fi, err := os.Lstat(indexFile)
+		if err == nil {
+			if fi.ModTime().After(mtimeMap[indexFile]) {
+				fmt.Println("Index file changed, reloading it.")
+				mtimeMap[indexFile] = fi.ModTime()
+				index = string(readFile(indexFile))
+			}
+		}
+
 		time.Sleep(1 * time.Second)
 	}
 }
@@ -199,8 +209,8 @@ func maintainQuotes(c chan bool) {
 // The method that starts up the server, given the port where to listen on.
 func Start(listenPort int) {
 	visits = 0
+	indexFile = "index.html"
 	rand.Seed(time.Now().UTC().UnixNano())
-	readIndex("index.html")
 	http.HandleFunc("/", handler)
 	http.HandleFunc("/visits", visitsHandler)
 	c := make(chan bool)
