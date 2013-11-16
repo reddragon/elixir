@@ -161,11 +161,11 @@ func maintainQuotes(c chan bool) {
 	for {
 		for _, fileName := range getQuotesFiles() {
 			if !fileSet[fileName] {
-				log.Print("Found a new quotes file", fileName)
+				log.Println("Found a new quotes file", fileName)
 				quoteEndpoint := getEndpoint(fileName)
 				quoteMap[quoteEndpoint] = readQuotes(fileName)
 				mtimeMap[fileName] = getMTime(fileName)
-				log.Print("Loaded quotes from", fileName)
+				log.Println("Loaded quotes from", fileName)
 				fileSet[fileName] = true
 			}
 		}
@@ -181,13 +181,13 @@ func maintainQuotes(c chan bool) {
 		for fileName, _ := range fileSet {
 			fi, err := os.Lstat(fileName)
 			if err != nil {
-				log.Print("Removing", fileName, "from the list, since it is no longer available.")
+				log.Println("Removing", fileName, "from the list, since it is no longer available.")
 				delete(fileSet, fileName)
 				delete(quoteMap, getEndpoint(fileName))
 				continue
 			}
 			if fi.ModTime().After(mtimeMap[fileName]) {
-				log.Print("Reloading quotes from", fileName)
+				log.Println("Reloading quotes from", fileName)
 				quoteEndpoint := fileName[:len(fileName)-len(".quotes")]
 				quoteMap[quoteEndpoint] = readQuotes(fileName)
 				mtimeMap[fileName] = fi.ModTime()
@@ -196,7 +196,7 @@ func maintainQuotes(c chan bool) {
 		fi, err := os.Lstat(indexFile)
 		if err == nil {
 			if fi.ModTime().After(mtimeMap[indexFile]) {
-				log.Print("Index file changed, reloading it.")
+				log.Println("Index file changed, reloading it.")
 				mtimeMap[indexFile] = fi.ModTime()
 				index = string(readFile(indexFile))
 			}
@@ -214,12 +214,12 @@ func Start(listenPort int) {
 	http.HandleFunc("/", handler)
 	http.HandleFunc("/visits", visitsHandler)
 	c := make(chan bool)
-	log.Print("Starting the quotes maintenance goroutine")
+	log.Println("Starting the quotes maintenance goroutine")
 	go maintainQuotes(c)
-	log.Print("Waiting for the signal to serve traffic")
+	log.Println("Waiting for the signal to serve traffic")
 	safe := <-c
 	if safe {
-		log.Print("It is safe to serve traffic now")
+		log.Println("It is safe to serve traffic now")
 	} else {
 		log.Fatal("Something bad happened. Dying")
 	}
