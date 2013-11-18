@@ -17,9 +17,7 @@ Installing and Using
 
 2. Get the package by doing ```go get github.com/reddragon/elixir```.
 
-3. Get cowsay-go by doing ```go get github.com/dhruvbird/go-cowsay```
-
-4. You can take a look at the example provided in the ```examples``` directory on how to use elixir. 
+3. You can take a look at the example provided in the ```examples``` directory on how to use elixir. 
 
 
 Running
