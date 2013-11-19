@@ -1,9 +1,7 @@
 Elixir
 ======
 
-A server which returns random hilarious quotes from movies or TV serials that you like. An example server is hosted on 
-andazapnapna.com/quote, which currently only serves quotes from one movie of my choice, 
-'<a href="http://en.wikipedia.org/wiki/Andaz_Apna_Apna" target="_blank">Andaz Apna Apna</a>'. 
+A server which returns random hilarious quotes from movies or TV serials that you like. An example server is hosted at (randquotes.com)[http://randquotes.com]. 
 
 But elixir is capable of serving quotes from different sources at different points. What's more, is that you can 
 add/delete/modify the quotes files at any point of time. All you need to do is, create a file containing the quotes that 
