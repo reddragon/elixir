@@ -1,0 +1,107 @@
+<html>
+	<head>
+		<title>Random Movie Quotes</title>
+
+		<!-- Optional theme -->
+		<link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.0.2/css/bootstrap.min.css">
+		<!-- Latest compiled and minified JavaScript -->
+	</head>
+
+	<body>
+		<div class="container">
+			<h1>rand(quotes)</h1>
+			A random quotes server. 
+			<hr/>
+			<div>
+				I like movies, and I like repeating legendary quotes from the movies that
+				I like in daily life. I thought it would be cool, if I could have a 
+				API which would give me a random quote from one of these movies, and I
+				could use it as a source as a 
+				<a href="http://en.wikipedia.org/wiki/Fortune_(Unix)" target="_blank"> 
+					fortune</a> server, and other cool things. So I quickly wrote up one.
+			</div>
+			<br/>
+			<div>
+				<div>
+				Right now this server serves quotes for Breaking Bad, Game of Thrones,
+				Lord of the Rings, Quentin Tarantino's movies and Andaz Apna Apna, and
+				returns a plain text quote (and in <a href="http://en.wikipedia.org/wiki/Cowsay" 
+					target="_blank">cowsay</a> format, if you specify so).
+				</div>
+				<br/>
+				<div>
+				Here is an example from Lord of the Rings:
+				<pre>
+"What would a mere ranger know?"
+				</pre>
+				
+				And, here is one from Breaking Bad in cowsay:
+				<pre>
+ _________________________________________
+/ Walter White: If you don’t know who I   \
+| am, maybe your best course would be to  |
+\ tread lightly.                          /
+ -----------------------------------------
+        \   ^__^
+         \  (oo)\_______
+            (__)\       )\/\
+                ||----w |
+                ||     ||
+				</pre>
+				</div>
+				
+				<table class="table table-hover">
+					<tr>
+						<th>Source</th>
+						<th>Flavor</th>
+					<tr>
+						<td>Breaking Bad</td>
+						<td>
+							<a href="bb" target="_blank">Plain</a> | 
+							<a href="bb?f=cowsay" target = "_blank">Cowsay
+						</td>
+					</tr>
+					<tr>
+						<td>Game of Thrones</td>
+						<td>
+							<a href="got" target="_blank">Plain</a> | 
+							<a href="got?f=cowsay" target = "_blank">Cowsay
+						</td>
+				</tr>
+					<tr>
+						<td>Lord of the Rings</td>
+						<td>
+							<a href="lotr" target="_blank">Plain</a> | 
+							<a href="lotr?f=cowsay" target = "_blank">Cowsay
+						</td>
+				</tr>
+					<tr>
+						<td>Quentin Tarantino's Movies</td>
+						<td>
+							<a href="qt" target="_blank">Plain</a> | 
+							<a href="qt?f=cowsay" target = "_blank">Cowsay
+						</td>
+				</tr>
+					<tr>
+						<td>Andaz Apna Apna</td>
+						<td>
+							<a href="aaa" target="_blank">Plain</a> | 
+							<a href="aaa?f=cowsay" target = "_blank">Cowsay</a>
+						</td>
+				</tr>
+			</table>
+			<a href="https://gist.github.com/reddragon/7407165" 
+				target="_blank">Here</a> is what I use this API. Let me know how you
+			use it :-)
+			</div>
+			<hr/>
+			<div>
+				Powered by <a href="http://github.com/reddragon/elixir" 
+					target="_blank">elixir</a> 
+				in golang. Thanks to <a href="http://dhruvbird.blogspot.com">Dhruv</a> 
+				for implementing <a href="http://github.com/dhruvbird/go-cowsay">cowsay</a>
+				in go.
+			</div>
+		</div>
+	</body>
+</html>
