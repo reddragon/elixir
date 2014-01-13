@@ -8,6 +8,20 @@ Some features:
 * A quote database is simply a '.quotes' file (say, ```foo.quotes```), which is placed in the directory where you launched the server, and has one quote per line. The quotes from the ```foo.quotes``` database would be served at ```/foo``` endpoint, and similarily the quotes from 'bar.quotes' would be served at ```/bar```. Look at the ```examples``` dir for an example.
 * Can detect when you add / delete / make changes to any of the quotes files. No need to restart the server.
 * You can also modify the index.html page, which is served at "/".
+* You can also serve the quotes in [cowsay](http://en.wikipedia.org/wiki/Cowsay) format, wherein, the quotes would be returned with ASCII art of a cow trying to say them. For example,
+
+```
+ _________________________________________
+/ Walter White: If you don’t know who I   \
+| am, maybe your best course would be to  |
+\ tread lightly.                          /
+ -----------------------------------------
+        \   ^__^
+         \  (oo)\_______
+            (__)\       )\/\
+                ||----w |
+                ||     ||
+```
 
 An example server is hosted at [randquotes.com](http://randquotes.com), which serves quotes form the movies and tv-serials that I like. 
 
