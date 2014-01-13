@@ -1,13 +1,16 @@
 Elixir
 ======
 
-A server which returns random hilarious quotes from movies or TV serials that you like. An example server is hosted at 
-[randquotes.com](http://randquotes.com). 
+Elixir is a simple to use, fortune-cookie server which returns a random quote from a quote database. 
 
-But elixir is capable of serving quotes from different sources at different points. What's more, is that you can 
-add/delete/modify the quotes files at any point of time. All you need to do is, create a file containing the quotes that 
-you want to get served, one quote on one line, and the file should have a '.quotes' extension. If the filename was 
-"foo.quotes", it will get served at "/foo". You can also modify the index.html page, and it will be auto-reloaded.
+Some features:
+* Capable of serving quotes from multiple quote databases.
+* A quote database is simply a '.quotes' file (say, ```foo.quotes```), which is placed in the directory where you launched the server, and has one quote per line. The quotes from the ```foo.quotes``` database would be served at ```/foo``` endpoint, and similarily the quotes from 'bar.quotes' would be served at ```/bar```. Look at the ```examples``` dir for an example.
+* Can detect when you add / delete / make changes to any of the quotes files. No need to restart the server.
+* You can also modify the index.html page, which is served at "/".
+
+An example server is hosted at [randquotes.com](http://randquotes.com), which serves quotes form the movies and tv-serials that I like. 
+
 
 Installing and Using
 ====================
@@ -22,8 +25,8 @@ Installing and Using
 Running
 =======
 
-1. To run the example server, switch to its directory and do: ```go build example.go```
+1. To run the example server, switch to its directory and build it. For example, if you would like to build the randquotes server, do ```cd examples/randquotes.com``` and ```go build randquotes.go```
 
-2. Run the server by: ```./example -port=8080```, or whatever port you like. elixir logs the diagnostic messages to 
+2. Run the server by: ```./randquotes -port=8080```, or whatever port you like. elixir logs the diagnostic messages to 
 ```stderr``` and visits to ```stdout```. So, feel free to direct those two streams to any log file that you feel 
 appropriate.
